@@ -1,1 +1,0 @@
-Ceramic pot profile generator
