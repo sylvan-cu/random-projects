@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Ceramic Pot Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .description {
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        .canvas-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+            height: 500px;
+            position: relative;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .controls-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .specs-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #444;
+        }
+
+        .specs-list {
+            list-style: none;
+        }
+
+        .specs-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .specs-list li:last-child {
+            border-bottom: none;
+        }
+
+        .buttons-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        button {
+            background-color: #4a72b0;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #395992;
+        }
+
+        button.secondary {
+            background-color: #5cb85c;
+        }
+
+        button.secondary:hover {
+            background-color: #4a964a;
+        }
+
+        .instruction {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #777;
+            margin-top: 5px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px 0;
+            color: #777;
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .controls-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>3D Ceramic Pot Generator</h1>
+            <p class="description">Generate unique ceramic pot designs with various shapes, proportions, and textures. Perfect for pottery inspiration or 3D modeling reference.</p>
+        </header>
+
+        <div class="canvas-container" id="canvas-container">
+            <!-- Three.js canvas will be inserted here -->
+        </div>
+
+        <div class="controls-panel">
+            <div class="specs-container">
+                <h2>Pot Specifications</h2>
+                <ul class="specs-list" id="specs-list">
+                    <li><span>Height:</span> <span>200mm</span></li>
+                    <li><span>Base Width:</span> <span>80mm</span></li>
+                    <li><span>Max Width:</span> <span>120mm</span></li>
+                    <li><span>Neck Width:</span> <span>60mm</span></li>
+                    <li><span>Mouth Width:</span> <span>70mm</span></li>
+                    <li><span>Clay Color:</span> <span>#a67c52</span></li>
+                    <li><span>Surface Texture:</span> <span>Smooth</span></li>
+                    <li><span>Style:</span> <span>Wide Belly Vase</span></li>
+                </ul>
+            </div>
+
+            <div class="buttons-container">
+                <div class="button-group">
+                    <button id="generate-btn">Generate New Pot</button>
+                    <button id="tumble-btn" class="secondary">Toggle Tumble</button>
+                </div>
+                <button id="export-btn">Export as OBJ</button>
+                <p class="instruction">Drag to rotate | Scroll to zoom | Shift+drag to pan</p>
+            </div>
+        </div>
+
+        <footer>
+            Created with Three.js | &copy; 2025 | <a href="https://github.com/your-username/ceramic-pot-generator" target="_blank">GitHub</a>
+        </footer>
+    </div>
+
+    <!-- Import Three.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.159.0/three.min.js"></script>
+    
+    <script>
+        // Main application script
+        document.addEventListener('DOMContentLoaded', function() {
+            // References
+            const canvasContainer = document.getElementById('canvas-container');
+            const specsList = document.getElementById('specs-list');
+            const generateBtn = document.getElementById('generate-btn');
+            const tumbleBtn = document.getElementById('tumble-btn');
+            const exportBtn = document.getElementById('export-btn');
+            
+            // Scene variables
+            let scene, camera, renderer, potMesh, scenePivot;
+            let isRotating = false;
+            let previousMousePosition = { x: 0, y: 0 };
+            let rotation = { x: 0, y: 0 };
+            let zoomLevel = 400;
+            let autoRotate = false;
+            
+            // Pot properties
+            let potProfile = {
+                height: 200,
+                baseWidth: 80,
+                maxWidth: 120,
+                neckWidth: 60,
+                mouthWidth: 70,
+                neckHeight: 0.2,
+                bellyPosition: 0.5,
+                hasDivot: false,
+                potStyle: 0,
+                clay: '#a67c52',
+                texture: 'smooth',
+                segments: 32
+            };
+            
+            // Possible pot colors and textures
+            const potColors = ['#a67c52', '#d7b49e', '#efd9c7', '#6d4c3d', '#c1a296', '#8d7358', '#a08679', '#5c4033'];
+            const textures = ['smooth', 'rough', 'crackled'];
+            const potStyleNames = ['Wide Belly Vase', 'Bowl Shape', 'Cylinder', 'Double-Belly Amphora', 'Bottle Shape', 'Flared Top Vase'];
+            
+            // Initialize the 3D scene
+            function init() {
+                // Create scene
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color('#f5f5f5');
+                
+                // Create a pivot point for the entire scene
+                scenePivot = new THREE.Group();
+                scene.add(scenePivot);
+                
+                // Create camera
+                const aspectRatio = canvasContainer.clientWidth / canvasContainer.clientHeight;
+                camera = new THREE.PerspectiveCamera(45, aspectRatio, 1, 2000);
+                camera.position.set(0, 150, 400);
+                
+                // Create renderer
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+                renderer.shadowMap.enabled = true;
+                canvasContainer.appendChild(renderer.domElement);
+                
+                // Add lights
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+                scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(100, 200, 100);
+                directionalLight.castShadow = true;
+                scene.add(directionalLight);
+                
+                const backLight = new THREE.DirectionalLight(0xffffff, 0.5);
+                backLight.position.set(-100, 100, -100);
+                scene.add(backLight);
+                
+                // Add fill light from below for better detail visibility
+                const fillLight = new THREE.DirectionalLight(0xffffcc, 0.3);
+                fillLight.position.set(0, -100, 50);
+                scene.add(fillLight);
+                
+                // Add grid for reference
+                const gridHelper = new THREE.GridHelper(400, 40, 0x888888, 0xdddddd);
+                scenePivot.add(gridHelper);
+                gridHelper.position.y = -1; // Ensure grid is visibly below the pot
+                
+                // Set up event listeners
+                setupEventListeners();
+                
+                // Handle window resizing
+                window.addEventListener('resize', handleResize);
+                
+                function handleResize() {
+                    const width = canvasContainer.clientWidth;
+                    const height = canvasContainer.clientHeight;
+                    
+                    camera.aspect = width / height;
+                    camera.updateProjectionMatrix();
+                    
+                    renderer.setSize(width, height);
+                }
+                
+                // Generate initial pot
+                generateRandomPot();
+                
+                // Start animation loop
+                animate();
+                
+                function animate() {
+                    requestAnimationFrame(animate);
+                    
+                    // Auto-rotate scene if enabled
+                    if (autoRotate && scenePivot) {
+                        scenePivot.rotation.y += 0.01;
+                    }
+                    
+                    renderer.render(scene, camera);
+                }
+            }
+            
+            // Random number generator
+            function randomRange(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+            
+            // Generate a random pot profile
+            function generateRandomPot() {
+                // Create more random, varied pot shapes
+                const height = randomRange(120, 300);
+                const baseWidth = randomRange(40, 120);
+                const mouthWidth = randomRange(30, 140);
+                const segments = randomRange(24, 36);
+                
+                // Randomize pot shape characteristics
+                const potStyle = randomRange(0, 5); // Different style categories
+                
+                // Create more varied profiles based on pot style
+                let maxWidth, neckWidth, neckHeight, bellyPosition, hasDivot;
+                
+                switch(potStyle) {
+                    case 0: // Wide belly, narrow neck vase
+                        maxWidth = randomRange(Math.max(baseWidth, mouthWidth) * 1.5, Math.max(baseWidth, mouthWidth) * 2.2);
+                        neckWidth = randomRange(Math.min(baseWidth, mouthWidth) * 0.6, Math.min(baseWidth, mouthWidth) * 0.9);
+                        neckHeight = randomRange(0.1, 0.25); // Percentage of height where neck starts
+                        bellyPosition = randomRange(0.4, 0.6); // Belly position (percentage from top)
+                        hasDivot = randomRange(0, 10) > 7; // 30% chance of divot
+                        break;
+                    
+                    case 1: // Bowl shape (wide mouth)
+                        maxWidth = randomRange(Math.max(baseWidth, mouthWidth) * 0.9, Math.max(baseWidth, mouthWidth) * 1.2);
+                        neckWidth = mouthWidth * 0.9; // Almost no neck
+                        neckHeight = randomRange(0.05, 0.15);
+                        bellyPosition = randomRange(0.3, 0.5);
+                        hasDivot = false;
+                        break;
+                        
+                    case 2: // Straight-sided cylinder with possible waist
+                        maxWidth = randomRange(Math.max(baseWidth, mouthWidth) * 0.9, Math.max(baseWidth, mouthWidth) * 1.1);
+                        neckWidth = randomRange(Math.min(baseWidth * 0.7, mouthWidth * 0.7), Math.min(baseWidth, mouthWidth) * 0.9);
+                        neckHeight = randomRange(0.3, 0.7);
+                        bellyPosition = randomRange(0.4, 0.6);
+                        hasDivot = randomRange(0, 10) > 5; // 50% chance of divot/waist
+                        break;
+                        
+                    case 3: // Double-belly amphora
+                        maxWidth = randomRange(Math.max(baseWidth, mouthWidth) * 1.3, Math.max(baseWidth, mouthWidth) * 1.8);
+                        neckWidth = randomRange(Math.min(baseWidth, mouthWidth) * 0.5, Math.min(baseWidth, mouthWidth) * 0.8);
+                        neckHeight = randomRange(0.2, 0.3);
+                        bellyPosition = randomRange(0.3, 0.4); // First belly position
+                        hasDivot = true; // Always has divot (for double belly)
+                        break;
+                        
+                    case 4: // Bottle shape (very narrow neck, wide body)
+                        maxWidth = randomRange(Math.max(baseWidth, mouthWidth) * 1.4, Math.max(baseWidth, mouthWidth) * 2.0);
+                        neckWidth = randomRange(20, 40); // Very narrow neck
+                        neckHeight = randomRange(0.15, 0.3);
+                        bellyPosition = randomRange(0.5, 0.7);
+                        hasDivot = randomRange(0, 10) > 6; // 40% chance of divot
+                        break;
+                        
+                    case 5: // Flared top vase
+                        maxWidth = randomRange(Math.max(baseWidth, mouthWidth) * 0.8, Math.max(baseWidth, mouthWidth) * 1.3);
+                        neckWidth = randomRange(Math.min(baseWidth, mouthWidth) * 0.6, Math.min(baseWidth, mouthWidth) * 0.8);
+                        neckHeight = randomRange(0.1, 0.2);
+                        bellyPosition = randomRange(0.4, 0.6);
+                        hasDivot = randomRange(0, 10) > 7; // 30% chance of divot
+                        break;
+                        
+                    default: // Fallback standard vase
+                        maxWidth = randomRange(Math.max(baseWidth, mouthWidth) * 1.2, Math.max(baseWidth, mouthWidth) * 1.5);
+                        neckWidth = randomRange(Math.min(baseWidth, mouthWidth) * 0.7, Math.min(baseWidth, mouthWidth));
+                        neckHeight = randomRange(0.1, 0.3);
+                        bellyPosition = randomRange(0.4, 0.6);
+                        hasDivot = randomRange(0, 10) > 8; // 20% chance of divot
+                }
+                
+                potProfile = {
+                    height,
+                    baseWidth,
+                    maxWidth,
+                    neckWidth,
+                    neckHeight,
+                    mouthWidth,
+                    bellyPosition,
+                    hasDivot,
+                    potStyle,
+                    clay: potColors[randomRange(0, potColors.length - 1)],
+                    texture: textures[randomRange(0, textures.length - 1)],
+                    segments
+                };
+                
+                // Update the pot mesh
+                updatePot();
+                
+                // Update specifications display
+                updateSpecsDisplay();
+            }
+            
+            // Update specifications display
+            function updateSpecsDisplay() {
+                const specItems = [
+                    { label: 'Height', value: `${potProfile.height}mm` },
+                    { label: 'Base Width', value: `${potProfile.baseWidth}mm` },
+                    { label: 'Max Width', value: `${potProfile.maxWidth}mm` },
+                    { label: 'Neck Width', value: `${potProfile.neckWidth}mm` },
+                    { label: 'Mouth Width', value: `${potProfile.mouthWidth}mm` },
+                    { label: 'Clay Color', value: `${potProfile.clay}` },
+                    { label: 'Surface Texture', value: potProfile.texture.charAt(0).toUpperCase() + potProfile.texture.slice(1) },
+                    { label: 'Style', value: potStyleNames[potProfile.potStyle] }
+                ];
+                
+                if (potProfile.hasDivot) {
+                    specItems.push({ label: 'Features', value: 'Center Divot/Waist' });
+                }
+                
+                let html = '';
+                specItems.forEach(item => {
+                    html += `<li><span>${item.label}:</span> <span>${item.value}</span></li>`;
+                });
+                
+                specsList.innerHTML = html;
+            }
+            
+            // Create pot geometry
+            function createPotGeometry() {
+                const { height, baseWidth, maxWidth, neckWidth, neckHeight, 
+                       mouthWidth, bellyPosition, hasDivot, potStyle, segments } = potProfile;
+                
+                // Generate points for the pot profile - more points for smoother curves
+                const numPoints = 20; // Increased for more detail
+                const points = [];
+                
+                for (let i = 0; i < numPoints; i++) {
+                    const t = i / (numPoints - 1); // Normalized position (0 to 1)
+                    // Y position from bottom to top (0 = base, height = top)
+                    const y = t * height;
+                    
+                    let radius;
+                    
+                    // Different pot profiles based on style and parameters
+                    if (i === 0) {
+                        // Bottom (base) - perfectly flat for stability
+                        radius = baseWidth / 2;
+                    } else if (i === numPoints - 1) {
+                        // Top (mouth)
+                        radius = mouthWidth / 2;
+                    } else {
+                        // Complex shape generation based on pot style
+                        switch(potStyle) {
+                            case 0: // Wide belly, narrow neck vase
+                                if (t > 1 - neckHeight) {
+                                    // Neck area with slight curve
+                                    const neckPosition = (t - (1 - neckHeight)) / neckHeight;
+                                    const neckCurve = Math.sin(neckPosition * Math.PI / 2);
+                                    radius = neckWidth / 2 * (1 - neckCurve) + mouthWidth / 2 * neckCurve;
+                                } else if (t > 1 - bellyPosition) {
+                                    // Shoulder to belly
+                                    const factor = (t - (1 - bellyPosition)) / (bellyPosition - neckHeight);
+                                    const bellyCurve = Math.sin(factor * Math.PI / 2);
+                                    radius = maxWidth / 2 - bellyCurve * (maxWidth / 2 - neckWidth / 2);
+                                } else {
+                                    // Base to belly
+                                    const factor = t / (1 - bellyPosition);
+                                    // Apply easing for a more graceful taper from base
+                                    const easedFactor = Math.pow(factor, 2);
+                                    radius = baseWidth / 2 * (1 - easedFactor) + maxWidth / 2 * easedFactor;
+                                }
+                                break;
+                                
+                            case 1: // Bowl shape
+                                if (t > 0.9) {
+                                    // Small lip at top
+                                    radius = mouthWidth / 2;
+                                } else {
+                                    // Curved bowl shape
+                                    const factor = (1 - t) / 0.9;
+                                    const bowlCurve = 1 - Math.pow(factor, 1.5);
+                                    radius = baseWidth / 2 + bowlCurve * (maxWidth / 2 - baseWidth / 2);
+                                }
+                                break;
+                                
+                            case 2: // Straight-sided cylinder with possible waist
+                                if (hasDivot && t > 0.3 && t < 0.7) {
+                                    // Create waist/divot in the middle
+                                    const centerFactor = 2 * Math.abs(t - 0.5);
+                                    const waistDepth = randomRange(0.1, 0.3) / 100; // How pronounced the waist is
+                                    const waistCurve = Math.sin(centerFactor * Math.PI);
+                                    
+                                    // Interpolate between straight sides and waist
+                                    const straightSide = baseWidth / 2 + (mouthWidth / 2 - baseWidth / 2) * t;
+                                    const waistValue = straightSide * (1 - waistDepth * waistCurve);
+                                    radius = waistValue;
+                                } else {
+                                    // Straight(ish) sides with slight curve
+                                    const straightFactor = t;
+                                    const curveFactor = Math.sin(t * Math.PI) * 0.1; // Subtle curve
+                                    radius = baseWidth / 2 + (mouthWidth / 2 - baseWidth / 2) * straightFactor + curveFactor * maxWidth / 2;
+                                }
+                                break;
+                                
+                            case 3: // Double-belly amphora
+                                if (t > 1 - neckHeight) {
+                                    // Neck area
+                                    const neckPosition = (t - (1 - neckHeight)) / neckHeight;
+                                    const neckCurve = Math.sin(neckPosition * Math.PI / 2);
+                                    radius = neckWidth / 2 * (1 - neckCurve) + mouthWidth / 2 * neckCurve;
+                                } else if (t > 1 - bellyPosition) {
+                                    // First belly (from top)
+                                    const factor = (t - (1 - bellyPosition)) / (bellyPosition - neckHeight);
+                                    const bellyCurve = Math.sin(factor * Math.PI);
+                                    radius = maxWidth / 2 - bellyCurve * (maxWidth / 2 - neckWidth / 2);
+                                } else if (t > 1 - bellyPosition - 0.2) {
+                                    // Waist between bellies
+                                    const factor = (t - (1 - bellyPosition - 0.2)) / 0.2;
+                                    const waistCurve = Math.sin(factor * Math.PI);
+                                    const waistWidth = neckWidth * 1.2;
+                                    radius = waistWidth / 2 + waistCurve * (maxWidth / 2 - waistWidth / 2);
+                                } else {
+                                    // Second belly (toward base) to base
+                                    const factor = t / (1 - bellyPosition - 0.2);
+                                    const bellyCurve = Math.sin(factor * Math.PI);
+                                    const secondBellyMax = maxWidth * 0.9;
+                                    
+                                    if (factor < 0.5) {
+                                        // Expanding from base to second belly
+                                        radius = baseWidth / 2 + bellyCurve * (secondBellyMax / 2 - baseWidth / 2);
+                                    } else {
+                                        // Tapering from second belly to waist
+                                        const tapeFactor = (factor - 0.5) / 0.5;
+                                        const easedFactor = Math.pow(tapeFactor, 2);
+                                        radius = secondBellyMax / 2 * (1 - easedFactor) + waistWidth / 2 * easedFactor;
+                                    }
+                                }
+                                break;
+                                
+                            case 4: // Bottle shape
+                                if (t > 1 - neckHeight) {
+                                    // Long narrow neck
+                                    const neckPosition = (t - (1 - neckHeight)) / neckHeight;
+                                    const neckCurve = Math.pow(neckPosition, 0.5); // Slightly curved neck
+                                    radius = neckWidth / 2 * (1 - neckCurve) + mouthWidth / 2 * neckCurve;
+                                } else if (t > 1 - neckHeight - 0.1) {
+                                    // Shoulder - quick transition to belly
+                                    const factor = (t - (1 - neckHeight - 0.1)) / 0.1;
+                                    const shoulderCurve = Math.sin(factor * Math.PI / 2);
+                                    radius = maxWidth / 2 - shoulderCurve * (maxWidth / 2 - neckWidth / 2);
+                                } else {
+                                    // Base to belly
+                                    const factor = t / (1 - neckHeight - 0.1);
+                                    // Egg-shaped or round belly
+                                    const eggFactor = Math.pow(factor, 1.2); // Adjusted for egg shape
+                                    radius = baseWidth / 2 * (1 - eggFactor) + maxWidth / 2 * eggFactor;
+                                }
+                                break;
+                                
+                            case 5: // Flared top vase
+                                if (t > 0.95) {
+                                    // Flared lip at top
+                                    const flareFactor = (t - 0.95) / 0.05;
+                                    radius = mouthWidth / 2 * (1 + flareFactor * 0.1); // Slight outward flare
+                                } else if (t > 1 - neckHeight - 0.05) {
+                                    // Neck area
+                                    const neckFactor = (t - (1 - neckHeight - 0.05)) / neckHeight;
+                                    const neckCurve = Math.sin(neckFactor * Math.PI / 2);
+                                    radius = neckWidth / 2 * (1 - neckCurve) + mouthWidth / 2 * neckCurve;
+                                } else if (t > 1 - bellyPosition) {
+                                    // Shoulder to belly
+                                    const factor = (t - (1 - bellyPosition)) / (bellyPosition - (neckHeight + 0.05));
+                                    const bellyCurve = Math.sin(factor * Math.PI / 2);
+                                    radius = maxWidth / 2 - bellyCurve * (maxWidth / 2 - neckWidth / 2);
+                                } else {
+                                    // Base to belly
+                                    const factor = t / (1 - bellyPosition);
+                                    const easedFactor = Math.pow(factor, 2.5); // Steeper curve near base
+                                    radius = baseWidth / 2 * (1 - easedFactor) + maxWidth / 2 * easedFactor;
+                                }
+                                break;
+                                
+                            default: // Generic vase shape with random divot if needed
+                                if (t > 1 - neckHeight) {
+                                    // Neck area
+                                    const neckPosition = (t - (1 - neckHeight)) / neckHeight;
+                                    const neckCurve = Math.sin(neckPosition * Math.PI / 2);
+                                    radius = neckWidth / 2 * (1 - neckCurve) + mouthWidth / 2 * neckCurve;
+                                } else if (t > 1 - bellyPosition) {
+                                    // Shoulder to belly
+                                    const factor = (t - (1 - bellyPosition)) / (bellyPosition - neckHeight);
+                                    
+                                    if (hasDivot && factor > 0.3 && factor < 0.7) {
+                                        // Create a random divot in the upper body if specified
+                                        const divotFactor = (factor - 0.3) / 0.4;
+                                        const divotDepth = randomRange(0.1, 0.25);
+                                        const divotCurve = Math.sin(divotFactor * Math.PI);
+                                        
+                                        const normalRadius = maxWidth / 2 - factor * (maxWidth / 2 - neckWidth / 2);
+                                        radius = normalRadius * (1 - divotDepth * divotCurve);
+                                    } else {
+                                        // Normal curve to belly
+                                        const bellyCurve = Math.sin(factor * Math.PI / 2);
+                                        radius = maxWidth / 2 - bellyCurve * (maxWidth / 2 - neckWidth / 2);
+                                    }
+                                } else {
+                                    // Base to belly
+                                    const factor = t / (1 - bellyPosition);
+                                    // Apply easing for a more graceful taper from base
+                                    const easedFactor = Math.pow(factor, 2);
+                                    radius = baseWidth / 2 * (1 - easedFactor) + maxWidth / 2 * easedFactor;
+                                }
+                        }
+                    }
+                    
+                    points.push(new THREE.Vector2(radius, y));
+                }
+                
+                // Create a LatheGeometry which rotates the profile curve around the Y axis
+                return new THREE.LatheGeometry(points, segments);
+            }
+            
+            // Update pot
+            function updatePot() {
+                // Remove existing pot mesh if it exists
+                if (potMesh) {
+                    scenePivot.remove(potMesh);
+                    potMesh.geometry.dispose();
+                    if (potMesh.material.map) potMesh.material.map.dispose();
+                    if (potMesh.material.bumpMap) potMesh.material.bumpMap.dispose();
+                    potMesh.material.dispose();
+                }
+                
+                // Create new geometry and material
+                const geometry = createPotGeometry();
+                const material = createPotMaterial();
+                
+                // Create mesh and add to scene
+                potMesh = new THREE.Mesh(geometry, material);
+                potMesh.position.y = 0; // Base sits on the ground plane
+                
+                scenePivot.add(potMesh);
+            }
+            
+            // Create pot material
+            function createPotMaterial() {
+                const { clay, texture } = potProfile;
+                
+                // Convert hex color to THREE.Color
+                const clayColor = new THREE.Color(clay);
+                
+                // Create basic material
+                const material = new THREE.MeshStandardMaterial({
+                    color: clayColor,
+                    roughness: 0.7,
+                    metalness: 0.0,
+                });
+                
+                // Add texture variations
+                if (texture === 'rough') {
+                    material.roughness = 0.9;
+                    
+                    // Create bump texture for rough surface
+                    const bumpTexture = new THREE.TextureLoader().load(createNoiseTexture(256, 256));
+                    material.bumpMap = bumpTexture;
+                    material.bumpScale = 0.5;
+                } else if (texture === 'crackled') {
+                    // Create crackle texture
+                    const crackleTexture = new THREE.TextureLoader().load(createCrackleTexture(512, 512));
+                    material.map = crackleTexture;
+                    material.roughnessMap = crackleTexture;
+                    material.roughness = 0.8;
+                }
+                
+                return material;
+            }
+            
+            // Create noise texture for rough surfaces
+            function createNoiseTexture(width, height) {
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const context = canvas.getContext('2d');
+                
+                const imageData = context.createImageData(width, height);
+                const data = imageData.data;
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    const value = Math.floor(Math.random() * 128) + 64;
+                    data[i] = value;
+                    data[i + 1] = value;
+                    data[i + 2] = value;
+                    data[i + 3] = 255;
+                }
+                
+                context.putImageData(imageData, 0, 0);
+                return canvas.toDataURL();
+            }
+            
+            // Create crackle texture
+            function createCrackleTexture(width, height) {
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const context = canvas.getContext('2d');
+                
+                // Fill with base color
+                context.fillStyle = '#ffffff';
+                context.fillRect(0, 0, width, height);
+                
+                // Draw cracks
+                context.strokeStyle = '#00000050';
+                context.lineWidth = 1;
+                
+                const numCracks = 20;
+                for (let i = 0; i < numCracks; i++) {
+                    const startX = Math.random() * width;
+                    const startY = Math.random() * height;
+                    
+                    context.beginPath();
+                    context.moveTo(startX, startY);
+                    
+                    let x = startX;
+                    let y = startY;
+                    
+                    const segments = 5 + Math.floor(Math.random() * 10);
+                    for (let j = 0; j < segments; j++) {
+                        x += (Math.random() - 0.5) * 100;
+                        y += (Math.random() - 0.5) * 100;
+                        context.lineTo(x, y);
+                    }
+                    
+                    context.stroke();
+                }
+                
+                return canvas.toDataURL();
