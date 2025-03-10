@@ -1,0 +1,294 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { getArtifactByFileName, getAllArtifacts } from "../../utils/claude-artifacts";
+import { siteConfig } from "../../config.js";
+
+// Define the getStaticPaths function for pre-rendering
+export async function getStaticPaths() {
+  const artifacts = await getAllArtifacts();
+  
+  return artifacts.map(artifact => ({
+    params: { 
+      slug: artifact.fileName.replace(/\.(jsx|tsx)$/, '') 
+    },
+    props: { artifact }
+  }));
+}
+
+// Get the slug from the URL params
+const { slug } = Astro.params;
+const { artifact } = Astro.props;
+
+// If needed to fetch directly instead of from props
+// const fileName = `${slug}.jsx`; // Add .tsx handling if needed
+// const artifact = await getArtifactByFileName(fileName);
+
+// Handle case where artifact isn't found
+if (!artifact) {
+  return Astro.redirect('/404');
+}
+
+// Define the component import path
+const componentPath = `../../components/claude-artifacts/${artifact.fileName}`;
+
+// Format date for display
+const formattedDate = new Date(artifact.lastModified).toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+});
+
+// Set page title
+const pageTitle = `${artifact.name} | ${siteConfig.title}`;
+---
+
+<Layout title={pageTitle} description={artifact.description}>
+  <div class="mb-6">
+    <!-- Back button and metadata -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
+      {siteConfig.artifactPage.showBackToGalleryButton && (
+        <a 
+          href="/" 
+          class="inline-flex items-center text-indigo-600 hover:text-indigo-800 mb-4 sm:mb-0"
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            class="h-5 w-5 mr-1" 
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+          >
+            <path 
+              stroke-linecap="round" 
+              stroke-linejoin="round" 
+              stroke-width="2" 
+              d="M10 19l-7-7m0 0l7-7m-7 7h18" 
+            />
+          </svg>
+          Back to gallery
+        </a>
+      )}
+      
+      <div class="text-gray-500 text-sm flex items-center">
+        <svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          class="h-4 w-4 mr-1" 
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
+        >
+          <path 
+            stroke-linecap="round" 
+            stroke-linejoin="round" 
+            stroke-width="2" 
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" 
+          />
+        </svg>
+        <span>Updated {formattedDate}</span>
+      </div>
+    </div>
+
+    <!-- Artifact title and description -->
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">{artifact.name}</h1>
+    {artifact.description && (
+      <p class="text-gray-600 text-lg mb-6">{artifact.description}</p>
+    )}
+  </div>
+
+  <!-- Artifact display container with controls -->
+  <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm mb-8">
+    <!-- Control bar -->
+    {(siteConfig.artifactPage.showFullScreenButton || 
+     siteConfig.artifactPage.showSourceCode || 
+     siteConfig.artifactPage.showCopyButton) && (
+      <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex justify-end space-x-2">
+        {siteConfig.artifactPage.showFullScreenButton && (
+          <button 
+            type="button"
+            class="text-gray-500 hover:text-gray-700 text-sm flex items-center px-2 py-1"
+            id="fullscreen-btn"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              class="h-4 w-4 mr-1" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path 
+                stroke-linecap="round" 
+                stroke-linejoin="round" 
+                stroke-width="2" 
+                d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" 
+              />
+            </svg>
+            Full Screen
+          </button>
+        )}
+        
+        {siteConfig.artifactPage.showSourceCode && (
+          <button 
+            type="button"
+            class="text-gray-500 hover:text-gray-700 text-sm flex items-center px-2 py-1"
+            id="view-source-btn"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              class="h-4 w-4 mr-1" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path 
+                stroke-linecap="round" 
+                stroke-linejoin="round" 
+                stroke-width="2" 
+                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" 
+              />
+            </svg>
+            View Source
+          </button>
+        )}
+        
+        {siteConfig.artifactPage.showCopyButton && (
+          <button 
+            type="button"
+            class="text-gray-500 hover:text-gray-700 text-sm flex items-center px-2 py-1"
+            id="copy-code-btn"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              class="h-4 w-4 mr-1" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path 
+                stroke-linecap="round" 
+                stroke-linejoin="round" 
+                stroke-width="2" 
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" 
+              />
+            </svg>
+            Copy Code
+          </button>
+        )}
+      </div>
+    )}
+    
+    <!-- Component display area -->
+    <div class="p-6 artifact-container" id="artifact-container">
+      <div class="artifact-component">
+        {/* Dynamically import and render the component */}
+        {(async () => {
+          try {
+            const Component = await import(/* @vite-ignore */ componentPath);
+            return <Component.default client:load />;
+          } catch (error) {
+            return (
+              <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+                <h3 class="font-medium">Error loading component</h3>
+                <p class="text-sm mt-1">{error.message}</p>
+              </div>
+            );
+          }
+        })()}
+      </div>
+    </div>
+  </div>
+
+  <!-- Source code display (initially hidden) -->
+  {siteConfig.artifactPage.showSourceCode && (
+    <div id="source-code-panel" class="hidden bg-gray-800 text-white p-4 rounded-lg overflow-x-auto mb-8">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="text-lg font-medium">Source Code</h3>
+        <button 
+          id="close-source-btn"
+          class="text-gray-400 hover:text-white"
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            class="h-5 w-5" 
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+          >
+            <path 
+              stroke-linecap="round" 
+              stroke-linejoin="round" 
+              stroke-width="2" 
+              d="M6 18L18 6M6 6l12 12" 
+            />
+          </svg>
+        </button>
+      </div>
+      <pre class="text-sm"><code id="source-code-content">Loading source code...</code></pre>
+    </div>
+  )}
+</Layout>
+
+<script define:vars={{ fileName: artifact.fileName, filePath: artifact.filePath }}>
+  // Function to toggle fullscreen
+  document.getElementById('fullscreen-btn')?.addEventListener('click', () => {
+    const container = document.getElementById('artifact-container');
+    if (!container) return;
+    
+    if (!document.fullscreenElement) {
+      container.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  });
+  
+  // Source code viewing functionality
+  const viewSourceBtn = document.getElementById('view-source-btn');
+  const sourcePanel = document.getElementById('source-code-panel');
+  const closeSourceBtn = document.getElementById('close-source-btn');
+  const sourceContent = document.getElementById('source-code-content');
+  
+  if (viewSourceBtn && sourcePanel && closeSourceBtn) {
+    viewSourceBtn.addEventListener('click', async () => {
+      sourcePanel.classList.remove('hidden');
+      try {
+        // This would typically fetch the file content, but for simplicity we'll use a placeholder
+        // In a real app, you would fetch this from an API endpoint
+        sourceContent.textContent = `// Source code for ${fileName}\n// Would be fetched from the server in a real app`;
+      } catch (error) {
+        sourceContent.textContent = `Error loading source: ${error.message}`;
+      }
+    });
+    
+    closeSourceBtn.addEventListener('click', () => {
+      sourcePanel.classList.add('hidden');
+    });
+  }
+  
+  // Copy code functionality
+  document.getElementById('copy-code-btn')?.addEventListener('click', () => {
+    // In a real app, you would fetch and copy the actual source code
+    navigator.clipboard.writeText(`// Source code for ${fileName}\n// Would be fetched in a real app`)
+      .then(() => {
+        alert('Source code copied to clipboard!');
+      })
+      .catch(err => {
+        console.error('Failed to copy: ', err);
+      });
+  });
+</script>
+
+<style>
+  .artifact-container {
+    min-height: 300px;
+  }
+  
+  /* Add styles for fullscreen mode */
+  :fullscreen .artifact-container {
+    background-color: white;
+    padding: 2rem;
+    height: 100vh;
+    overflow-y: auto;
+  }
+</style>
+

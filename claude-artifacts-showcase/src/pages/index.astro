@@ -1,0 +1,95 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { getAllArtifacts, getArtifactMetadata } from "../utils/claude-artifacts";
+import fs from 'node:fs';
+
+// Get all artifacts
+const artifactsList = await getAllArtifacts();
+
+// Enhance artifacts with last modified date
+const artifacts = artifactsList.map(artifact => {
+  // Metadata is already included in the artifact from getAllArtifacts()
+  const stats = fs.statSync(artifact.path);
+  return {
+    ...artifact,
+    title: artifact.metadata.title || artifact.name,
+    description: artifact.metadata.description || '',
+    lastModified: stats.mtime
+  };
+});
+---
+
+<Layout title="Claude AI Artifacts Showcase">
+  <main class="container mx-auto px-4 py-8">
+    
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {artifacts.length === 0 ? (
+        <div class="col-span-full bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <h2 class="text-lg font-medium text-yellow-700">No artifacts found</h2>
+          <p class="mt-2 text-yellow-600">
+            Add React components to the <code class="bg-yellow-100 px-1 py-0.5 rounded">src/components/claude-artifacts</code> directory to see them here.
+          </p>
+        </div>
+      ) : (
+        artifacts.map((artifact) => (
+          <a
+            href={`/artifacts/${artifact.name}`}
+            class="block bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 h-full"
+          >
+            <div class="p-6 flex flex-col h-full">
+              <div class="flex items-center mb-2">
+                <div class="mr-3 p-2 rounded-md bg-purple-100">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    class="h-5 w-5 text-purple-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path 
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                    />
+                  </svg>
+                </div>
+                <h2 class="text-xl font-semibold text-gray-800 flex-1">
+                  {artifact.title}
+                </h2>
+              </div>
+              
+              <div class="text-xs font-medium text-gray-500 mb-3">
+                {artifact.fileName}
+              </div>
+              
+              {artifact.description && (
+                <p class="text-gray-600 mb-4 line-clamp-3 flex-grow">{artifact.description}</p>
+              )}
+              
+              <div class="flex items-center text-sm text-gray-500 mt-4 pt-4 border-t border-gray-100">
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  class="h-4 w-4 mr-1" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path 
+                    stroke-linecap="round" 
+                    stroke-linejoin="round" 
+                    stroke-width="2" 
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" 
+                  />
+                </svg>
+                <span>
+                  Updated {new Date(artifact.lastModified).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+          </a>
+        ))
+      )}
+    </div>
+  </main>
+</Layout>
