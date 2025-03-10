@@ -1,12 +1,14 @@
-import { fileURLToPath } from 'node:url';
-import fs from 'node:fs';
+// Existing imports stay the same
 import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
-// Define the directory where Claude artifacts are stored
-const ARTIFACTS_DIR = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../components/claude-artifacts'
-);
+// Updated ARTIFACTS_DIR definition
+const ARTIFACTS_DIR = 
+  // Check if we're in production (Netlify)
+  process.env.NODE_ENV === 'production' || process.env.NETLIFY === 'true'
+    ? path.join(process.cwd(), 'src/components/claude-artifacts')
+    : path.join(path.dirname(fileURLToPath(import.meta.url)), '../components/claude-artifacts');
 
 /**
  * Get the paths to all artifact files in the format required by Astro's getStaticPaths
