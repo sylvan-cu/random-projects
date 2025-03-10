@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Routes, Route, Link, NavLink, useParams } from 'react-router-dom';
-import ArtifactLoader from './components/ArtifactLoader';
+import ArtifactBrowser from './components/ArtifactBrowser';
 import DynamicComponentRenderer from './components/DynamicComponentRenderer';
 import { getArtifactById, loadArtifactComponent } from './utils/artifactLoader';
 
@@ -126,7 +126,7 @@ function App() {
       
       <main>
         <Routes>
-          <Route path="/" element={<ArtifactLoader />} />
+          <Route path="/" element={<ArtifactBrowser />} />
           <Route path="/artifact/:id" element={<ArtifactView />} />
         </Routes>
       </main>

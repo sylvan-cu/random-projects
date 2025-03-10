@@ -1,5 +1,4 @@
 import React from 'react';
-import './BarChart.css';
 
 const BarChart = ({ title = "Sample Bar Chart", data = null }) => {
   // Default data if none is provided
@@ -16,89 +15,57 @@ const BarChart = ({ title = "Sample Bar Chart", data = null }) => {
   const maxValue = Math.max(...chartData.map(item => item.value));
 
   return (
-    <div className="bar-chart-container">
-      <h2 className="chart-title">{title}</h2>
+    <div className="w-full max-w-[700px] mx-auto p-6 shadow-xl rounded-xl bg-gradient-to-br from-white to-gray-50 border border-gray-100 transition-all duration-300 hover:shadow-2xl">
+      <h2 className="text-center mb-6 font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent text-2xl">{title}</h2>
       
-      <div className="chart-area">
-        {chartData.map((item, index) => (
-          <div className="bar-container" key={index}>
+      <div className="relative h-[280px] mt-6 border-b-2 border-l-2 border-indigo-200 bg-indigo-50/40 rounded-lg overflow-hidden">
+        {/* Y-axis label */}
+        <div className="absolute -left-10 top-1/2 -rotate-90 text-xs font-medium text-indigo-600">Values</div>
+        
+        {/* Grid lines */}
+        <div className="absolute inset-0 w-full h-full">
+          {[0, 25, 50, 75, 100].map((line) => (
             <div 
-              className="bar" 
-              style={{ 
-                height: `${(item.value / maxValue) * 100}%`,
-                backgroundColor: `hsl(${index * 40}, 70%, 60%)`
-              }}
+              key={line} 
+              className="absolute w-full border-t border-indigo-100 text-xs text-indigo-400 font-medium"
+              style={{ bottom: `${line}%` }}
             >
-              <span className="bar-value">{item.value}</span>
+              <span className="absolute -left-8">{Math.round(maxValue * line / 100)}</span>
             </div>
-            <div className="bar-label">{item.label}</div>
-          </div>
-        ))}
+          ))}
+        </div>
+        
+        {/* X-axis label */}
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 -translate-y-[-24px] text-xs font-medium text-indigo-600">Months</div>
+        
+        {/* Chart content with bars */}
+        <div className="flex items-end justify-around h-full pt-5 px-4 pb-8">
+          {chartData.map((item, index) => (
+            <div className="flex flex-col items-center group" key={index}>
+              <div 
+                className="w-[36px] md:w-[48px] rounded-t-lg relative flex justify-center transition-all duration-500 ease-in-out transform group-hover:scale-105 cursor-pointer overflow-hidden"
+                style={{ 
+                  height: `${(item.value / maxValue) * 90}%`, // 90% to leave room for labels
+                  background: `linear-gradient(to top, hsl(${210 + index * 30}, 80%, 55%), hsl(${210 + index * 30}, 90%, 65%))`
+                }}
+              >
+                <div className="absolute inset-0 bg-white opacity-20 group-hover:opacity-0 transition-opacity duration-300"></div>
+                <span className="absolute -top-7 text-sm font-bold text-indigo-700 bg-white/90 px-2 py-1 rounded-full shadow-sm group-hover:bg-indigo-100 transition-all duration-300">
+                  {item.value}
+                </span>
+                <div className="h-full w-full absolute bottom-0 opacity-20 group-hover:opacity-40 transition-opacity duration-300 bg-gradient-to-t from-indigo-900 to-transparent"></div>
+              </div>
+              <div className="mt-3 text-xs font-semibold text-indigo-700 group-hover:text-indigo-900 transition-colors duration-300">{item.label}</div>
+            </div>
+          ))}
+        </div>
       </div>
       
-      <style jsx>{`
-        .bar-chart-container {
-          width: 100%;
-          max-width: 600px;
-          margin: 0 auto;
-          padding: 20px;
-          box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-          border-radius: 8px;
-          background-color: white;
-        }
-        
-        .chart-title {
-          text-align: center;
-          margin-bottom: 20px;
-          color: #333;
-          font-size: 1.5rem;
-        }
-        
-        .chart-area {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-end;
-          height: 250px;
-          margin-top: 20px;
-          border-bottom: 2px solid #ddd;
-          border-left: 2px solid #ddd;
-          padding: 0 10px 20px 10px;
-        }
-        
-        .bar-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          flex: 1;
-          margin: 0 5px;
-        }
-        
-        .bar {
-          width: 100%;
-          max-width: 40px;
-          border-radius: 4px 4px 0 0;
-          transition: height 0.5s ease;
-          position: relative;
-          display: flex;
-          justify-content: center;
-        }
-        
-        .bar-value {
-          position: absolute;
-          top: -25px;
-          font-size: 0.8rem;
-          font-weight: bold;
-        }
-        
-        .bar-label {
-          margin-top: 8px;
-          font-size: 0.8rem;
-          color: #555;
-        }
-      `}</style>
+      <div className="mt-4 text-center text-xs text-gray-500 italic">
+        Hover over bars for details
+      </div>
     </div>
   );
 };
 
 export default BarChart;
-

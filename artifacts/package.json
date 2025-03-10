@@ -4,8 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node buildArtifactsIndex.js",
     "dev": "vite",
+    "prebuild": "node buildArtifactsIndex.js",
     "build": "vite build",
+    "build-index": "node buildArtifactsIndex.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
