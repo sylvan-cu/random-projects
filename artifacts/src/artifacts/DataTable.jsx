@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const DataTable = () => {
   // Sample data for the table
@@ -10,8 +10,8 @@ const DataTable = () => {
     { id: 5, name: 'Michael Brown', email: 'michael@example.com', role: 'Designer', status: 'Inactive' },
   ];
   
-  // State for row hover (in a real component, use useState)
-  const [hoveredRow, setHoveredRow] = React.useState(null);
+  // State for row hover
+  const [hoveredRow, setHoveredRow] = useState(null);
 
   // Table column headers
   const columns = [
@@ -23,15 +23,15 @@ const DataTable = () => {
   ];
 
   return (
-    <div className="p-8 font-sans bg-gradient-to-br from-indigo-50 to-purple-50 min-h-screen flex flex-col items-center">
-      <div className="w-full max-w-5xl bg-white rounded-xl shadow-xl overflow-hidden border border-purple-100 transition-all duration-300 hover:shadow-2xl transform hover:-translate-y-1">
-        <div className="px-6 py-5 bg-gradient-to-r from-violet-600 to-indigo-600 flex justify-between items-center">
+    <div className="p-4 font-sans bg-gradient-to-br from-indigo-50 to-purple-50 flex flex-col items-center">
+      <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg overflow-hidden border border-purple-100 transition-all duration-300 hover:shadow-xl">
+        <div className="px-4 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 flex justify-between items-center">
           <h2 className="text-white text-xl font-bold tracking-wide">User Data Table</h2>
           <div className="relative">
             <input 
               type="text" 
               placeholder="Search users..." 
-              className="py-2 pl-8 pr-4 rounded-lg bg-white/20 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 text-sm transition-all"
+              className="py-1.5 pl-8 pr-4 rounded-lg bg-white/20 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 text-sm transition-all"
             />
             <svg className="w-4 h-4 absolute left-2.5 top-3 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -43,7 +43,7 @@ const DataTable = () => {
           <thead className="bg-gradient-to-r from-violet-500 to-indigo-500 text-white">
             <tr>
               {columns.map((column) => (
-                <th key={column.id} className="px-6 py-4 text-left font-semibold text-sm uppercase tracking-wider">
+                <th key={column.id} className="px-4 py-3 text-left font-semibold text-sm uppercase tracking-wider">
                   <div className="flex items-center space-x-1 cursor-pointer hover:text-indigo-100 transition-colors">
                     <span>{column.label}</span>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -64,23 +64,22 @@ const DataTable = () => {
                 onMouseEnter={() => setHoveredRow(row.id)}
                 onMouseLeave={() => setHoveredRow(null)}
               >
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  <div className="flex items-center">
-                    <div className="h-8 w-8 flex-shrink-0 rounded-full bg-gradient-to-br from-violet-400 to-indigo-400 flex items-center justify-center text-white font-bold mr-3">
+                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <div className="flex items-center justify-center">
+                    <div className="h-7 w-7 flex-shrink-0 rounded-full bg-gradient-to-br from-violet-400 to-indigo-400 flex items-center justify-center text-white font-bold">
                       {row.id}
                     </div>
-                    <span className="font-semibold">{row.id}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">{row.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-indigo-600">{row.email}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-3 py-1 inline-flex text-xs font-semibold rounded-md bg-indigo-100 text-indigo-800">
+                  <span className="px-2 py-0.5 inline-flex text-xs font-semibold rounded-md bg-indigo-100 text-indigo-800">
                     {row.role}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-3 py-1.5 rounded-full text-xs font-semibold inline-flex items-center transition-all duration-300 ${
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold inline-flex items-center transition-all duration-300 ${
                     row.status === 'Active' 
                       ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-sm shadow-green-200' 
                       : 'bg-gradient-to-r from-rose-500 to-red-500 text-white shadow-sm shadow-red-200'
@@ -94,7 +93,7 @@ const DataTable = () => {
           </tbody>
         </table>
         
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
           <div className="text-sm text-gray-600">Showing <span className="font-medium">{data.length}</span> users</div>
           <div className="flex space-x-1">
             <button className="px-3 py-1.5 rounded-md bg-white border border-gray-300 text-gray-600 text-sm hover:bg-gray-50 transition-colors">Previous</button>

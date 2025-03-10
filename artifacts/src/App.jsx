@@ -1,107 +1,11 @@
-import React, { useState, useEffect, Suspense } from 'react';
-import { Routes, Route, Link, NavLink, useParams } from 'react-router-dom';
+import React from 'react';
+import { Routes, Route, Link, NavLink } from 'react-router-dom';
 import ArtifactBrowser from './components/ArtifactBrowser';
-import DynamicComponentRenderer from './components/DynamicComponentRenderer';
-import { getArtifactById, loadArtifactComponent } from './utils/artifactLoader';
 
-const ArtifactView = () => {
-  // Get the artifact ID from the URL using useParams
-  const { id } = useParams();
-  
-  // State for the artifact metadata, component, loading status, and error handling
-  const [artifact, setArtifact] = useState(null);
-  const [ArtifactComponent, setArtifactComponent] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  
-  useEffect(() => {
-    // Reset states when ID changes
-    setLoading(true);
-    setError(null);
-    setArtifact(null);
-    setArtifactComponent(null);
-    
-    // Load the artifact metadata and component
-    async function loadArtifact() {
-      try {
-        // Get artifact metadata
-        const artifactData = await getArtifactById(id);
-        
-        if (!artifactData) {
-          setError(`Artifact with ID "${id}" not found`);
-          setLoading(false);
-          return;
-        }
-        
-        setArtifact(artifactData);
-        
-        // Load the actual component
-        const component = await loadArtifactComponent(id);
-        setArtifactComponent(component);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error loading artifact:', err);
-        setError(`Failed to load artifact: ${err.message}`);
-        setLoading(false);
-      }
-    }
-    
-    loadArtifact();
-  }, [id]);
-  
-  if (loading) {
-    return <div className="p-4 text-center">Loading artifact...</div>;
-  }
-  
-  if (error) {
-    return <div className="p-4 bg-red-100 text-red-700 rounded">{error}</div>;
-  }
-  
-  if (!artifact) {
-    return <div className="p-4 text-center">Artifact not found</div>;
-  }
-  
-  return (
-    <div className="p-4 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">{artifact.name}</h1>
-      <p className="text-gray-600 mb-4">{artifact.description}</p>
-      <div className="text-sm mb-4">
-        <span className="mr-4">Type: <span className="font-medium">{artifact.type}</span></span>
-        <span className="mr-4">Created: <span className="font-medium">{artifact.createdAt.toLocaleDateString()}</span></span>
-        <span>Updated: <span className="font-medium">{artifact.updatedAt.toLocaleDateString()}</span></span>
-      </div>
-      
-      <div className="border rounded-lg overflow-hidden mb-6">
-        <div className="bg-gray-200 p-3">
-          <h3 className="font-medium">{artifact.name}</h3>
-          <div className="text-xs text-gray-600">
-            {artifact.tags && artifact.tags.map(tag => (
-              <span key={tag} className="inline-block bg-gray-100 px-2 py-1 rounded mr-1">
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className="p-4 bg-white">
-          {/* Render the dynamically loaded component inside a Suspense boundary */}
-          <div className="p-4 border rounded">
-            {ArtifactComponent ? (
-              <Suspense fallback={<div>Loading component...</div>}>
-                <ArtifactComponent />
-              </Suspense>
-            ) : (
-              <div className="p-4 text-center text-gray-500">Component preview not available</div>
-            )}
-          </div>
-        </div>
-      </div>
-      
-      <Link to="/" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-        Back to Artifacts Index
-      </Link>
-    </div>
-  );
-};
+// Import static page components for each artifact
+import BarChartPage from './pages/artifacts/BarChart';
+import DataTablePage from './pages/artifacts/DataTable';
+import DataTableTooPage from './pages/artifacts/DataTableToo';
 
 function App() {
   return (
@@ -127,7 +31,9 @@ function App() {
       <main>
         <Routes>
           <Route path="/" element={<ArtifactBrowser />} />
-          <Route path="/artifact/:id" element={<ArtifactView />} />
+          <Route path="/artifact/barchart" element={<BarChartPage />} />
+          <Route path="/artifact/datatable" element={<DataTablePage />} />
+          <Route path="/artifact/datatabletoo" element={<DataTableTooPage />} />
         </Routes>
       </main>
       

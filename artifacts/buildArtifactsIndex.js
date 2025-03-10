@@ -18,6 +18,7 @@ const __dirname = path.dirname(__filename);
 // Configuration
 const ARTIFACTS_DIR = path.resolve(__dirname, 'src/artifacts');
 const OUTPUT_FILE = path.resolve(__dirname, 'src/artifactsIndex.json');
+const PAGES_DIR = path.resolve(__dirname, 'src/pages/artifacts');
 const IGNORED_FILES = ['.gitkeep', '.DS_Store', 'README.md'];
 const IGNORED_DIRS = ['utils', 'helpers', 'node_modules'];
 const DEFAULT_TYPE = 'component';
@@ -208,6 +209,61 @@ function scanDirectory(dir) {
 }
 
 /**
+ * Generate static page files for each artifact
+ * @param {Object[]} artifacts - Array of artifact metadata objects
+ */
+function generateArtifactPages(artifacts) {
+  console.log('Generating static artifact pages...');
+  
+  // Create pages directory if it doesn't exist
+  if (!fs.existsSync(PAGES_DIR)) {
+    fs.mkdirSync(PAGES_DIR, { recursive: true });
+  }
+  
+  // Generate page file for each artifact
+  for (const artifact of artifacts) {
+    // Get component name with proper capitalization
+    const fileName = path.basename(artifact.path, path.extname(artifact.path));
+    const componentName = fileName;
+    const pagePath = path.join(PAGES_DIR, `${componentName}.jsx`);
+    
+    // Calculate the relative path to import the artifact
+    const artifactRelativePath = artifact.path.startsWith('./') 
+      ? artifact.path 
+      : `./${artifact.path}`;
+    
+    // Generate the page content
+    const pageContent = `import React from 'react';
+import { Link } from 'react-router-dom';
+import ${componentName} from '../../artifacts/${artifactRelativePath.replace(/\.jsx$|\.tsx$/, '')}';
+
+/**
+ * Static page for the ${artifact.name} artifact
+ */
+export default function ${componentName}Page() {
+  return (
+    <div className="artifact-container">
+      <${componentName} />
+      
+      <div className="back-button-container" style={{ position: 'fixed', bottom: '20px', left: '20px' }}>
+        <Link to="/" className="back-button">
+          ← Back
+        </Link>
+      </div>
+    </div>
+  );
+}
+`;
+    
+    // Write the page file
+    fs.writeFileSync(pagePath, pageContent);
+    console.log(`Generated page for ${artifact.name} at: ${pagePath}`);
+  }
+  
+  console.log(`Successfully generated ${artifacts.length} static artifact pages`);
+}
+
+/**
  * Main function to build the artifacts index
  */
 function buildArtifactsIndex() {
@@ -242,6 +298,9 @@ function buildArtifactsIndex() {
   
   console.log(`Successfully generated artifacts index with ${artifacts.length} artifacts`);
   console.log(`Output written to: ${OUTPUT_FILE}`);
+  
+  // Generate static pages for each artifact
+  generateArtifactPages(artifacts);
 }
 
 // Run the build function
